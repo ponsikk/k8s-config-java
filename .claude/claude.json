@@ -1,0 +1,208 @@
+{
+  "project": {
+    "name": "K8s Transaction Processing System",
+    "description": "High-load pet project для практики с Kubernetes: система обработки финансовых транзакций с автоскейлингом, мониторингом и оптимизацией под нагрузкой до 1M msg/sec",
+    "type": "microservices",
+    "language": "Java",
+    "framework": "Spring Boot"
+  },
+  "goal": "Практика с Kubernetes под высокой нагрузкой: HPA, resource management, pod scheduling, monitoring, distributed systems",
+  "infrastructure": {
+    "current_server": {
+      "provider": "DE-E3 (Германия, AMD Epyc)",
+      "cpu": "3 vCPU (до 3.65 GHz)",
+      "ram": "6 GiB",
+      "disk": "90 GiB NVMe",
+      "network": "500 Mbps (burst 1 Gbps)"
+    },
+    "target_load": {
+      "baseline": "30-50k msg/sec",
+      "peak": "80-120k msg/sec (с дополнительными серверами)",
+      "stress_test": "до 1M msg/sec"
+    },
+    "planned_expansion": "Докупить 1-2 аналогичных сервера для multi-node K8s кластера"
+  },
+  "architecture": {
+    "services": [
+      {
+        "name": "gateway-service",
+        "type": "producer",
+        "role": "REST API для приема транзакций, валидация, Redis rate limiting, Kafka producer",
+        "k8s_config": "HPA: 2-10 pods (CPU threshold: 70%)",
+        "tech": "Spring Boot + Kafka + Redis"
+      },
+      {
+        "name": "fraud-detection-service",
+        "type": "consumer",
+        "role": "Анализ транзакций на мошенничество (amount > $1000, frequency, geo-anomalies)",
+        "k8s_config": "2-4 pods",
+        "tech": "Spring Boot + Kafka Consumer"
+      },
+      {
+        "name": "analytics-service",
+        "type": "consumer",
+        "role": "Агрегация метрик в реальном времени, счетчики в Redis",
+        "k8s_config": "2-3 pods",
+        "tech": "Spring Boot + Kafka Consumer + Redis"
+      },
+      {
+        "name": "payment-processor-service",
+        "type": "consumer",
+        "role": "Симуляция обработки платежей",
+        "k8s_config": "3-5 pods (самый нагруженный)",
+        "tech": "Spring Boot + Kafka Consumer"
+      }
+    ],
+    "kafka_topics": [
+      "transactions (input, 3 partitions)",
+      "fraud-alerts",
+      "analytics-events",
+      "payment-confirmations"
+    ],
+    "message_format": {
+      "description": "Финансовые транзакции",
+      "fields": ["transactionId", "userId", "amount", "currency", "merchant", "merchantCategory", "timestamp", "type", "location"],
+      "size": "~250 bytes"
+    }
+  },
+  "tech_stack": {
+    "backend": ["Java 21 (Virtual Threads)", "Spring Boot 3.2+", "Spring Kafka", "Spring Data Redis", "Micrometer + Prometheus"],
+    "infrastructure": ["Kubernetes 1.28+", "Kafka 3.6+ (или Strimzi)", "Redis 7+", "PostgreSQL 15+ (optional)"],
+    "monitoring": ["Prometheus", "Grafana", "Kafka Exporter", "Redis Exporter", "kube-state-metrics"],
+    "load_testing": ["Go (vegeta/k6) или Python (locust)"]
+  },
+  "k8s_concepts_to_practice": {
+    "basic": ["Deployments", "Services", "ConfigMaps", "Secrets", "Namespaces", "Resource requests/limits"],
+    "autoscaling": ["HorizontalPodAutoscaler (CPU/Memory)", "Custom metrics (Kafka lag)", "Scaling policies", "VPA", "Keda"],
+    "scheduling": ["Pod Affinity/Anti-Affinity", "Taints/Tolerations", "Node Selector", "PriorityClasses", "PodDisruptionBudgets"],
+    "storage": ["StatefulSets", "PersistentVolumes", "PersistentVolumeClaims"],
+    "health": ["Liveness/Readiness/Startup Probes", "Graceful shutdown", "Rolling updates"],
+    "observability": ["Prometheus ServiceMonitors", "Custom metrics", "Grafana dashboards", "Alertmanager"]
+  },
+  "project_structure": {
+    "services/": "Spring Boot микросервисы (gateway, fraud-detection, analytics, payment-processor)",
+    "k8s/": "Kubernetes манифесты (deployments, services, hpa, statefulsets, monitoring)",
+    "load-testing/": "Скрипт прогрессивной нагрузки",
+    "docker-compose.yml": "Локальное окружение для разработки"
+  },
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "name": "Spring Boot проекты",
+      "status": "pending",
+      "deliverables": ["4 Maven/Gradle проекта", "Kafka + Redis интеграция", "Health endpoints", "Prometheus metrics"]
+    },
+    {
+      "phase": 2,
+      "name": "Контейнеризация",
+      "status": "pending",
+      "deliverables": ["Dockerfiles (multi-stage)", "docker-compose.yml", "Docker images"]
+    },
+    {
+      "phase": 3,
+      "name": "K8s манифесты",
+      "status": "pending",
+      "deliverables": ["Deployments/Services/HPA", "StatefulSets (Kafka/Redis)", "ConfigMaps/Secrets", "Monitoring"]
+    },
+    {
+      "phase": 4,
+      "name": "Мониторинг",
+      "status": "pending",
+      "deliverables": ["Prometheus + Grafana", "Custom metrics для HPA", "Dashboards", "Alerts"]
+    },
+    {
+      "phase": 5,
+      "name": "Load Testing",
+      "status": "pending",
+      "deliverables": ["Скрипт прогрессивной нагрузки (50k→100k→300k→500k→1M)", "Результаты тестов", "Анализ узких мест"]
+    },
+    {
+      "phase": 6,
+      "name": "Оптимизация",
+      "status": "pending",
+      "deliverables": ["Kafka tuning", "Spring Boot tuning", "K8s resource optimization"]
+    }
+  ],
+  "optimizations": {
+    "kafka": {
+      "linger.ms": 10,
+      "batch.size": 1048576,
+      "compression.type": "lz4",
+      "acks": 1,
+      "buffer.memory": 67108864
+    },
+    "spring_boot": {
+      "tomcat.threads.max": 200,
+      "kafka.consumer.max-poll-records": 500,
+      "kafka.consumer.fetch-min-size": 1048576
+    },
+    "redis": ["Pipelining", "Отключить persistence", "Lua scripts для atomicity"]
+  },
+  "monitoring_commands": [
+    "kubectl get hpa --watch",
+    "kubectl top pods -n transaction-system",
+    "kubectl get events --watch",
+    "kubectl logs -f <pod>",
+    "kubectl rollout status deployment/<name>"
+  ],
+  "current_status": {
+    "phase": "Development Complete - Ready for Testing",
+    "date": "2026-02-07",
+    "completed": [
+      "✅ Maven multi-module структура проекта",
+      "✅ Все 4 Spring Boot сервиса реализованы и скомпилированы",
+      "✅ PostgreSQL интеграция (JPA, auto-create schema)",
+      "✅ Kafka конфигурация для всех сервисов",
+      "✅ Redis конфигурация (rate limiting + analytics)",
+      "✅ Load-testing модуль с Virtual Threads",
+      "✅ docker-compose.yml с полной инфраструктурой",
+      "✅ Dockerfiles для всех сервисов",
+      "✅ Docker образы собраны",
+      "✅ Все сервисы запущены в Docker и работают"
+    ],
+    "running_services": {
+      "gateway-service": "localhost:8080 (healthy)",
+      "analytics-service": "localhost:8082 (running, Kafka connected)",
+      "fraud-detection-service": "localhost:8084 (running, Kafka connected)",
+      "payment-processor-service": "localhost:8083 (running, Kafka connected)"
+    },
+    "infrastructure_running": {
+      "kafka": "localhost:9092 + Kafka-UI localhost:8090",
+      "redis": "localhost:6379 + Redis-Commander localhost:8081",
+      "postgresql": "localhost:5432",
+      "zookeeper": "localhost:2181"
+    },
+    "fixed_issues": [
+      {
+        "issue": "RedisTemplate bean conflict in gateway-service",
+        "solution": "Added @Primary annotation",
+        "file": "services/gateway-service/src/main/java/com/transaction/gateway/config/RedisConfig.java"
+      },
+      {
+        "issue": "RedisTemplate missing in analytics-service",
+        "solution": "Changed type to <String, Object>",
+        "file": "services/analytics-service/src/main/java/com/transaction/analytics/config/RedisConfig.java"
+      },
+      {
+        "issue": "Port conflict fraud-detection:8081",
+        "solution": "Mapped to host port 8084",
+        "file": "docker-compose.yml"
+      }
+    ],
+    "next_steps": [
+      "⏳ Протестировать систему с реальными транзакциями",
+      "⏳ Создать GitHub Actions workflow для CI/CD",
+      "⏳ Подготовить K8s манифесты (Deployments, Services, HPA, PDB, StatefulSets, ConfigMaps, Secrets)",
+      "⏳ Деплой на 2 Linux сервера с k3s кластером"
+    ]
+  },
+  "docker_commands": {
+    "build": "mvn clean install -DskipTests",
+    "docker_build": "docker-compose build",
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "logs": "docker-compose logs -f [service-name]",
+    "status": "docker-compose ps",
+    "rebuild_service": "docker-compose build [service] && docker-compose up -d --force-recreate [service]"
+  }
+}
