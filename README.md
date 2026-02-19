@@ -42,7 +42,7 @@ Practice with Kubernetes under high load: HPA, pod scheduling, resource manageme
 - **Prometheus + Grafana:** Monitoring
 
 ## 🚀 Quick Start
-
+## Need tests 
 ### Prerequisites
 
 - **Java 21** (Virtual Threads support)
