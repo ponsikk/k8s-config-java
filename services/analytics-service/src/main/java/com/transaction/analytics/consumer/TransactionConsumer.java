@@ -1,4 +1,4 @@
-Аpackage com.transaction.analytics.consumer;
+package com.transaction.analytics.consumer;
 
 import com.transaction.analytics.service.AnalyticsService;
 import com.transaction.models.Transaction;
