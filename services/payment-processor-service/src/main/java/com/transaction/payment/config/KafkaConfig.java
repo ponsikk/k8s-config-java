@@ -2,6 +2,7 @@ package com.transaction.payment.config;
 
 import com.transaction.models.PaymentConfirmation;
 import com.transaction.models.Transaction;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -30,6 +32,9 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${kafka.topic.transactions:transactions}")
+    private String transactionsTopic;
+
     @Bean
     public ConsumerFactory<String, Transaction> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -48,7 +53,7 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, Transaction> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        factory.setConcurrency(3);
+        factory.setConcurrency(6);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         return factory;
     }
@@ -66,5 +71,13 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, PaymentConfirmation> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public NewTopic transactionsTopic() {
+        return TopicBuilder.name(transactionsTopic)
+                .partitions(6)
+                .replicas(1)
+                .build();
     }
 }

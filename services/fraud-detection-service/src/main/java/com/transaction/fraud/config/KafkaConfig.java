@@ -2,6 +2,7 @@ package com.transaction.fraud.config;
 
 import com.transaction.models.FraudAlert;
 import com.transaction.models.Transaction;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
@@ -27,6 +29,9 @@ public class KafkaConfig {
 
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
+
+    @Value("${kafka.topic.transactions:transactions}")
+    private String transactionsTopic;
 
     // Consumer Configuration
     @Bean
@@ -49,7 +54,7 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, Transaction> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        factory.setConcurrency(3);
+        factory.setConcurrency(6);
         return factory;
     }
 
@@ -68,5 +73,13 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, FraudAlert> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public NewTopic transactionsTopic() {
+        return TopicBuilder.name(transactionsTopic)
+                .partitions(6)
+                .replicas(1)
+                .build();
     }
 }
