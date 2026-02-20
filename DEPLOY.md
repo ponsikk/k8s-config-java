@@ -96,11 +96,52 @@ cd k8s-config-java
 
 ---
 
-## Шаг 6: Деплой инфраструктуры (Kafka, Redis, PostgreSQL)
+## Шаг 6: Деплой инфраструктуры (Zookeeper, Kafka, Redis, PostgreSQL)
 
 ```bash
 # Создать namespace
 kubectl create namespace transaction-system
+
+# Деплой Zookeeper (нужен для Kafka)
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: transaction-system
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - name: zookeeper
+        image: confluentinc/cp-zookeeper:7.5.0
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: transaction-system
+spec:
+  ports:
+  - port: 2181
+  selector:
+    app: zookeeper
+EOF
 
 # Деплой Kafka
 kubectl apply -f - <<EOF
@@ -132,8 +173,16 @@ spec:
           value: "zookeeper:2181"
         - name: KAFKA_ADVERTISED_LISTENERS
           value: "PLAINTEXT://kafka:9092"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
         - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
           value: "1"
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
 ---
 apiVersion: v1
 kind: Service
@@ -143,6 +192,7 @@ metadata:
 spec:
   ports:
   - port: 9092
+  clusterIP: None
   selector:
     app: kafka
 EOF
