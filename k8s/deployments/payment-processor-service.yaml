@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-processor-service
+  namespace: transaction-system
+  labels:
+    app: payment-processor-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-processor-service
+  template:
+    metadata:
+      labels:
+        app: payment-processor-service
+    spec:
+      containers:
+      - name: payment-processor-service
+        image: ponsik/payment-processor-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8083
+          name: http
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: POSTGRES_HOST
+          value: "postgres"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "transactions"
+        - name: POSTGRES_USER
+          value: "transactionuser"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 30
+          periodSeconds: 5
